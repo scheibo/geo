@@ -147,7 +147,7 @@ func AverageBearing(pts []LatLng) float64 {
 
 		pt = pts[i]
 	}
-	return normalizeBearing(math.Atan2(x, y) * RADIANS_TO_DEGREES)
+	return normalizeBearing(math.Atan2(y, x) * RADIANS_TO_DEGREES)
 }
 
 // AverageDirection is an alias for AverageBearing.

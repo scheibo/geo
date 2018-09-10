@@ -114,7 +114,7 @@ func TestAverageBearing(t *testing.T) {
 		s        string
 		expected float64
 	}{
-		{poly, 180.0},
+		{poly, 134.43},
 	}
 	for _, tt := range tests {
 		dec, err := DecodePolyline(tt.s)
