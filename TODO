@@ -1,0 +1,17 @@
+geo.Code(string) geo.LatLng
+geo.EncodePolyline()
+geo.DecodePolyline()
+
+geo.Center(polyline)
+geo.Center([]LatLng) // Midpoint
+
+geo.Bearing(a, b LatLng) // Direction
+geo.AverageBearing(polyline/[]LatLng) // AverageDirection
+
+1) geocode
+2) decode/encode polyline
+3) https://www.movable-type.co.uk/scripts/latlong.html
+
+https://stackoverflow.com/questions/491738/how-do-you-calculate-the-average-of-a-set-of-circular-data/491784#491784
+
+https://stackoverflow.com/questions/6671183/calculate-the-center-point-of-multiple-latitude-longitude-coordinate-pairs
