@@ -123,7 +123,7 @@ func Bearing(p1, p2 LatLng) float64 {
 		math.Sin(lat1)*math.Cos(lat2)*math.Cos(dLon)
 	brng := math.Atan2(y, x) * RADIANS_TO_DEGREES
 
-	return brng
+	return normalizeBearing(brng)
 }
 
 // Direction is an alias for Bearing.
@@ -147,8 +147,12 @@ func AverageBearing(pts []LatLng) float64 {
 
 		pt = pts[i]
 	}
-	return math.Atan2(x, y) * RADIANS_TO_DEGREES
+	return normalizeBearing(math.Atan2(x, y) * RADIANS_TO_DEGREES)
 }
 
 // AverageDirection is an alias for AverageBearing.
 var AverageDirection = AverageBearing
+
+func normalizeBearing(b float64) float64 {
+	return b + math.Ceil(-b/360)*360
+}
