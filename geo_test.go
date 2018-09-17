@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-const eps = 0.0001
-
 const poly = "kbhcF`_ciV|Bt@nBDrA_@dG}CfASvA@~Af@`Av@rEnF~@|@`@PtALb@C|@[t@w@v@_BlG{KhE}GbAqA`A}A~AyBhAsAvAyArAcArGsE|CmB~DkCjDoCnCoCvAyA~@iAbAcAtA_BT]d@kAb@wC^_DXsCh@}IZwAtBiEbEkHv@qAbAoAjCaC~FcDvA{@`CmApDqB|@g@j@c@r@cAh@wA`@uBBa@EuAo@aGIyA_@}DEy@J_Cf@kBlEeI|@yB`@yBJmBJiGReBXmAn@}Ax@wAxCkEpAwBAKc@ZWB"
 
 func TestParseLatLng(t *testing.T) {
@@ -22,8 +20,27 @@ func TestParseLatLng(t *testing.T) {
 			t.Errorf("ParseLatLng(%s): got %+v, want %+v", tt.s, err, tt.expected)
 		}
 
-		if !actual.AlmostEqual(&tt.expected, eps) {
+		if !almostEqual(actual, tt.expected) {
 			t.Errorf("ParseLatLng(%s): got %+v, want %+v", tt.s, actual, tt.expected)
+		}
+	}
+}
+
+func TestParseLatLngEle(t *testing.T) {
+	tests := []struct {
+		s        string
+		expected LatLngEle
+	}{
+		{"12.345678,56.789012,42.0", LatLngEle{12.345678, 56.789012, 42.0}},
+	}
+	for _, tt := range tests {
+		actual, err := ParseLatLngEle(tt.s)
+		if err != nil {
+			t.Errorf("ParseLatLngEle(%s): got %+v, want %+v", tt.s, err, tt.expected)
+		}
+
+		if !almostEqualZ(actual, tt.expected) {
+			t.Errorf("ParseLatLngEle(%s): got %+v, want %+v", tt.s, actual, tt.expected)
 		}
 	}
 }
@@ -46,8 +63,33 @@ func TestParseLatLngs(t *testing.T) {
 		}
 
 		for i, ll := range tt.expected {
-			if !actual[i].AlmostEqual(&ll, eps) {
+			if !almostEqual(actual[i], ll) {
 				t.Errorf("ParseLatLngs(%s): got %+v, want %+v", tt.s, actual, tt.expected)
+			}
+		}
+	}
+}
+
+func TestParseLatLngEles(t *testing.T) {
+	tests := []struct {
+		s        string
+		expected []LatLngEle
+	}{
+		{"12.34,56.78,42.0|14.89,123.89,155.56", []LatLngEle{{12.34, 56.78, 42.0}, {14.89, 123.89, 155.56}}},
+	}
+	for _, tt := range tests {
+		actual, err := ParseLatLngEles(tt.s)
+		if err != nil {
+			t.Errorf("ParseLatLngEles(%s): got %+v, want %+v", tt.s, err, tt.expected)
+		}
+
+		if len(actual) != len(tt.expected) {
+			t.Errorf("ParseLatLngEles(%s): got %+v, want %+v", tt.s, actual, tt.expected)
+		}
+
+		for i, ll := range tt.expected {
+			if !almostEqualZ(actual[i], ll) {
+				t.Errorf("ParseLatLngEles(%s): got %+v, want %+v", tt.s, actual, tt.expected)
 			}
 		}
 	}
@@ -70,7 +112,7 @@ func TestDecodePolyline(t *testing.T) {
 			t.Errorf("DecodePolyline(%s): got %+v, want len >= 2", tt.s, actual)
 		}
 
-		if !actual[0].AlmostEqual(&tt.start, eps) || !actual[len(actual)-1].AlmostEqual(&tt.end, eps) {
+		if !almostEqual(actual[0], tt.start) || !almostEqual(actual[len(actual)-1], tt.end) {
 			t.Errorf("DecodePolyline(%s): got %+v, want (%+v, ..., %+v)", tt.s, actual, tt.start, tt.end)
 		}
 	}
@@ -103,7 +145,7 @@ func TestBearing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		actual := Bearing(tt.a, tt.b)
-		if !Eqf(actual, tt.expected, eps) {
+		if !Eqf(actual, tt.expected) {
 			t.Errorf("Bearing(%+v, %+v): got %.2f, want %.2f", tt.a, tt.b, actual, tt.expected)
 		}
 	}
@@ -122,15 +164,23 @@ func TestAverageBearing(t *testing.T) {
 			t.Errorf("DecodePolyline(%s): got %+v", tt.s, err)
 		}
 		actual := AverageBearing(dec)
-		if !Eqf(actual, tt.expected, eps) {
+		if !Eqf(actual, tt.expected) {
 			t.Errorf("AverageBearing(%+v): got %.2f, want %.2f", dec, actual, tt.expected)
 		}
 	}
 }
 
+func almostEqual(a LatLng, b LatLng) bool {
+	return Eqf(a.Lat, b.Lat) && Eqf(a.Lng, b.Lng)
+}
+
+func almostEqualZ(a LatLngEle, b LatLngEle) bool {
+	return Eqf(a.Lat, b.Lat) && Eqf(a.Lng, b.Lng) && Eqf(a.Ele, b.Ele)
+}
+
 // Eqf returns true when floats a and b are equal to within some small epsilon eps.
 func Eqf(a, b float64, eps ...float64) bool {
-	e := 1e-3
+	e := 0.0001
 	if len(eps) > 0 {
 		e = eps[0]
 	}
