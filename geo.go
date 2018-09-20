@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const EARTH_RADIUS = 6371000 // m
+const EARTH_RADIUS = 6371008.8 // m
 var DEGREES_TO_RADIANS = math.Pi / 180.0
 var RADIANS_TO_DEGREES = 180.0 / math.Pi
 
@@ -93,6 +93,10 @@ func ParseLatLngEles(s string) ([]LatLngEle, error) {
 
 func (ll *LatLng) String() string {
 	return Coordinate(ll.Lat) + "," + Coordinate(ll.Lng)
+}
+
+func (ll *LatLng) latLngEle() LatLngEle {
+	return LatLngEle{Lat: ll.Lat, Lng: ll.Lng, Ele: math.Inf(-1)}
 }
 
 func (lle *LatLngEle) String() string {
@@ -273,34 +277,12 @@ func encodeInt(v int64, w io.ByteWriter) {
 
 // Average returns a LatLng object representing the average of the given points.
 func Average(lls []LatLng) LatLng {
-	if len(lls) == 0 {
-		return LatLng{}
-	} else if len(lls) == 1 {
-		return lls[0]
+	lles := make([]LatLngEle, len(lls))
+	for i := 0; i < len(lls); i++ {
+		lles[i] = lls[i].latLngEle()
 	}
-
-	x := 0.0
-	y := 0.0
-	z := 0.0
-
-	for _, ll := range lls {
-		lat := ll.Lat * DEGREES_TO_RADIANS
-		lng := ll.Lng * DEGREES_TO_RADIANS
-
-		x += math.Cos(lat) * math.Cos(lng)
-		y += math.Cos(lat) * math.Sin(lng)
-		z += math.Sin(lat)
-	}
-
-	tot := float64(len(lls))
-	x /= tot
-	y /= tot
-	z /= tot
-
-	lng := math.Atan2(y, x)
-	lat := math.Atan2(z, math.Sqrt(x*x+y*y))
-
-	return LatLng{Lat: lat * RADIANS_TO_DEGREES, Lng: lng * RADIANS_TO_DEGREES}
+	avg := AverageZ(lles)
+	return avg.LatLng()
 }
 
 // GeographicMidpoint is an alias for Average.
@@ -308,6 +290,49 @@ var GeographicMidpoint = Average
 
 // Centroid is an alias for Average.
 var Centroid = Average
+
+// AverageZ returns a LatLngEle object representing the average of the given points.
+func AverageZ(lles []LatLngEle) LatLngEle {
+	if len(lles) == 0 {
+		return LatLngEle{}
+	} else if len(lles) == 1 {
+		return lles[0]
+	}
+
+	x := 0.0
+	y := 0.0
+	z := 0.0
+
+	e := 0.0
+
+	for _, lle := range lles {
+		lat := lle.Lat * DEGREES_TO_RADIANS
+		lng := lle.Lng * DEGREES_TO_RADIANS
+
+		x += math.Cos(lat) * math.Cos(lng)
+		y += math.Cos(lat) * math.Sin(lng)
+		z += math.Sin(lat)
+
+		e += lle.Ele
+	}
+
+	tot := float64(len(lles))
+	x /= tot
+	y /= tot
+	z /= tot
+	e /= tot
+
+	lng := math.Atan2(y, x)
+	lat := math.Atan2(z, math.Sqrt(x*x+y*y))
+
+	return LatLngEle{Lat: lat * RADIANS_TO_DEGREES, Lng: lng * RADIANS_TO_DEGREES, Ele: e}
+}
+
+// GeographicMidpointZ is an alias for AverageZ.
+var GeographicMidpointZ = AverageZ
+
+// CentroidZ is an alias for AverageZ.
+var CentroidZ = AverageZ
 
 // Distance calculates the Haversine distance between two points in metres.
 // See: http://www.movable-type.co.uk/scripts/latlong.html
@@ -352,7 +377,7 @@ func Bearing(p1, p2 LatLng) float64 {
 // Direction is an alias for Bearing.
 var Direction = Bearing
 
-// AverageBearing computers the mean bearing for the set of points pts.
+// AverageBearing computes the mean bearing for the set of points pts.
 // See: https://en.wikipedia.org/wiki/Mean_of_circular_quantities
 func AverageBearing(pts []LatLng) float64 {
 	if len(pts) <= 1 {
@@ -375,6 +400,18 @@ func AverageBearing(pts []LatLng) float64 {
 
 // AverageDirection is an alias for AverageBearing.
 var AverageDirection = AverageBearing
+
+// AverageBearingZ computes the mean bearing for the set of points pts.
+func AverageBearingZ(lles []LatLngEle) float64 {
+	lls := make([]LatLng, len(lles))
+	for i := 0; i < len(lles); i++ {
+		lls[i] = lles[i].LatLng()
+	}
+	return AverageBearing(lls)
+}
+
+// AverageDirection is an alias for AverageBearing.
+var AverageDirectionZ = AverageBearingZ
 
 func normalizeBearing(b float64) float64 {
 	return b + math.Ceil(-b/360)*360
