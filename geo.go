@@ -403,11 +403,16 @@ var AverageDirection = AverageBearing
 
 // AverageBearingZ computes the mean bearing for the set of points pts.
 func AverageBearingZ(lles []LatLngEle) float64 {
+	return AverageBearing(LatLngs(lles))
+}
+
+// LatLngs converts lles from LatLngEles to LatLngs.
+func LatLngs(lles []LatLngEle) []LatLng {
 	lls := make([]LatLng, len(lles))
 	for i := 0; i < len(lles); i++ {
 		lls[i] = lles[i].LatLng()
 	}
-	return AverageBearing(lls)
+	return lls
 }
 
 // AverageDirection is an alias for AverageBearing.
